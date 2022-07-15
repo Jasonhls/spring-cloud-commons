@@ -107,6 +107,12 @@ public class RefreshScope extends GenericScope implements ApplicationContextAwar
 		super.postProcessBeanDefinitionRegistry(registry);
 	}
 
+	/**
+	 * RefreshScope属于ApplicationListener的子类，在AbstractApplicationContext的refresh方法的registerListeners()方法中会生成RefreshScope的BeanDefinition，
+	 * 在finishRefresh()方法的publishEvent(new ContextRefreshedEvent(this))方法中，会获取所有的ApplicationListener实例，然后遍历调用它的onApplicationEvent方法，
+	 * 即下面这个方法也会被调用到
+	 * @param event
+	 */
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		start(event);
@@ -151,7 +157,13 @@ public class RefreshScope extends GenericScope implements ApplicationContextAwar
 	@ManagedOperation(description = "Dispose of the current instance of all beans "
 			+ "in this scope and force a refresh on next method execution.")
 	public void refreshAll() {
+		//调用RefreshScope父类的destory方法，销毁scope为refresh的bean。
 		super.destroy();
+		/**
+		 * 发布RefreshScopeRefreshedEvent事件，通知bean生命周期已经变更，已知的
+		 * 两个类EurekaDiscoveryClientConfiguration.EurekaClientConfigurationRefresher接受了此事件，
+		 * EurekaClientConfigurationRefresher接受到此事件后，进行对eureka服务器重连的操作。
+		 */
 		this.context.publishEvent(new RefreshScopeRefreshedEvent());
 	}
 

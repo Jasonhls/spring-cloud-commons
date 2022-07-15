@@ -48,13 +48,21 @@ import org.springframework.web.client.RestTemplate;
 @EnableConfigurationProperties(LoadBalancerRetryProperties.class)
 public class LoadBalancerAutoConfiguration {
 
+	//注入Spring容器中所有RestTemplate类型的bean实例
 	@LoadBalanced
 	@Autowired(required = false)
 	private List<RestTemplate> restTemplates = Collections.emptyList();
 
+	//注入Spring容器中所有的LoadBalancerRequestTransformer类型的bean实例
 	@Autowired(required = false)
 	private List<LoadBalancerRequestTransformer> transformers = Collections.emptyList();
 
+	/**
+	 * spring在上下文启动的适合，如果是SmartInitializationSingleton实现的bean，
+	 * 会在DefaultListableBeanFactory的preInstantiateSingletons方法中调用它的afterSingletonInstantiated方法
+	 * @param restTemplateCustomizers
+	 * @return
+	 */
 	@Bean
 	public SmartInitializingSingleton loadBalancedRestTemplateInitializerDeprecated(
 			final ObjectProvider<List<RestTemplateCustomizer>> restTemplateCustomizers) {
@@ -82,6 +90,10 @@ public class LoadBalancerAutoConfiguration {
 		public LoadBalancerInterceptor loadBalancerInterceptor(
 				LoadBalancerClient loadBalancerClient,
 				LoadBalancerRequestFactory requestFactory) {
+			/**
+			 * LoadBalancerClient对象是RibbonAutoConfiguration配置类中初始化的RibbonLoadBalancerClient对象
+			 * LoadBalancerRequestFactory对象是当前配置类中初始化的LoadBalancerRequestFactory
+			 */
 			return new LoadBalancerInterceptor(loadBalancerClient, requestFactory);
 		}
 
@@ -89,6 +101,12 @@ public class LoadBalancerAutoConfiguration {
 		@ConditionalOnMissingBean
 		public RestTemplateCustomizer restTemplateCustomizer(
 				final LoadBalancerInterceptor loadBalancerInterceptor) {
+			/**
+			 * 这里定义一个RestTemplateCustomizer实现类，接口只需要定义接口的方法实现，相当于实现该接口的实现类，
+			 * 方法入参为RestTemplate
+			 * 这里的RestTemplate把拦截器LoadBalancerInterceptor对象设置到自己的拦截器集合中，RestTemplate的拦截器为ClientHttpRequestInterceptor类型
+			 * 在执行RestTemplate的getForObject方法进行请求的时候，会执行RestTemplate的拦截器集合，最终会执行LoadBalancerInterceptor的intercept方法
+			 */
 			return restTemplate -> {
 				List<ClientHttpRequestInterceptor> list = new ArrayList<>(
 						restTemplate.getInterceptors());

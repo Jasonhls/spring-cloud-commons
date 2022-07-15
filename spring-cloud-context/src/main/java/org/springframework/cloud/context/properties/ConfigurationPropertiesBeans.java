@@ -39,6 +39,7 @@ import org.springframework.stereotype.Component;
 public class ConfigurationPropertiesBeans
 		implements BeanPostProcessor, ApplicationContextAware {
 
+	//添加有@ConfiguraitonProperties注解的bean都将保存在该集合中
 	private Map<String, ConfigurationPropertiesBean> beans = new HashMap<>();
 
 	private ApplicationContext applicationContext;
@@ -87,9 +88,14 @@ public class ConfigurationPropertiesBeans
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName)
 			throws BeansException {
+		//遍历注册的所有Scope并且判断是否有RefreshScope，先从注册的所有Scope中查找RefreshScope，如果没有返回false，如果是返回true
 		if (isRefreshScoped(beanName)) {
 			return bean;
 		}
+		/**
+		 * 如果isRefreshScope返回false就判断当前Bean是否有@ConfigurationProperties注解，如果有会被包装成ConfigurationPropertiesBean，
+		 * 并存入到this.beans集合中
+		 */
 		ConfigurationPropertiesBean propertiesBean = ConfigurationPropertiesBean
 				.get(this.applicationContext, bean, beanName);
 		if (propertiesBean != null) {
@@ -123,6 +129,7 @@ public class ConfigurationPropertiesBeans
 	}
 
 	public Set<String> getBeanNames() {
+		//返回所有带@ConfigurationProperties注解的bean的名称集合
 		return new HashSet<String>(this.beans.keySet());
 	}
 

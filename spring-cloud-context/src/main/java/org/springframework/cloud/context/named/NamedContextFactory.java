@@ -45,6 +45,8 @@ import org.springframework.core.env.MapPropertySource;
  * @param <C> specification
  * @author Spencer Gibb
  * @author Dave Syer
+ *
+ * SpringCloud Netflix Ribbon中的SpringClientFactory实现了NamedContextFactory
  */
 // TODO: add javadoc
 public abstract class NamedContextFactory<C extends NamedContextFactory.Specification>
@@ -54,6 +56,11 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 
 	private final String propertyName;
 
+	/**
+	 * 以服务名为key，值为ApplicationContext对象，
+	 * 比如restTemplate.getForObject("http://nacos-discovery-provider-sample/echo/" + message, String.class);调用远程服务的时候，
+	 * 这里的nacos-discovery-provider-sample就是对应的服务名
+	 */
 	private Map<String, AnnotationConfigApplicationContext> contexts = new ConcurrentHashMap<>();
 
 	private Map<String, C> configurations = new ConcurrentHashMap<>();
@@ -64,6 +71,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 
 	public NamedContextFactory(Class<?> defaultConfigType, String propertySourceName,
 			String propertyName) {
+		//如果是SpringCloud Netflix Ribbon，这里的defaultConfigType是由SpringClientFactory的构造方法传过来的，即RibbonClientConfiguration.class
 		this.defaultConfigType = defaultConfigType;
 		this.propertySourceName = propertySourceName;
 		this.propertyName = propertyName;
@@ -95,6 +103,9 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 		this.contexts.clear();
 	}
 
+	/**
+	 * 获取应用上下文
+	 */
 	protected AnnotationConfigApplicationContext getContext(String name) {
 		if (!this.contexts.containsKey(name)) {
 			synchronized (this.contexts) {
@@ -106,14 +117,19 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 		return this.contexts.get(name);
 	}
 
+	/**
+	 * 创建应用上下文
+	 */
 	protected AnnotationConfigApplicationContext createContext(String name) {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		//@RibbonClient的value或name属性，指定了服务名的配置，如果有注册到当前上下文中
 		if (this.configurations.containsKey(name)) {
 			for (Class<?> configuration : this.configurations.get(name)
 					.getConfiguration()) {
 				context.register(configuration);
 			}
 		}
+		//通过@RibbonClients的defaultConfiguration指定了配置，如果有注册到当前上下文中
 		for (Map.Entry<String, C> entry : this.configurations.entrySet()) {
 			if (entry.getKey().startsWith("default.")) {
 				for (Class<?> configuration : entry.getValue().getConfiguration()) {
@@ -121,6 +137,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 				}
 			}
 		}
+		//使用默认的配置，即RibbonClientConfiguration
 		context.register(PropertyPlaceholderAutoConfiguration.class,
 				this.defaultConfigType);
 		context.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
@@ -128,6 +145,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 				Collections.<String, Object>singletonMap(this.propertyName, name)));
 		if (this.parent != null) {
 			// Uses Environment from parent as well as beans
+			//将Spring ApplicationContext设置成该服务名的上下文的父级
 			context.setParent(this.parent);
 			// jdk11 issue
 			// https://github.com/spring-cloud/spring-cloud-netflix/issues/3101
@@ -168,6 +186,7 @@ public abstract class NamedContextFactory<C extends NamedContextFactory.Specific
 	}
 
 	@SuppressWarnings("unchecked")
+	//查找某个bean实例
 	public <T> T getInstance(String name, ResolvableType type) {
 		AnnotationConfigApplicationContext context = getContext(name);
 		String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context,

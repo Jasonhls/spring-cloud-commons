@@ -393,6 +393,7 @@ public class GenericScope implements Scope, BeanFactoryPostProcessor,
 			return this.bean;
 		}
 
+		//清空上次创建的对象信息
 		public void destroy() {
 			if (this.callback == null) {
 				return;

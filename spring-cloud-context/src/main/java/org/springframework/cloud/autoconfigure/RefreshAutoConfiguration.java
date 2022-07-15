@@ -82,6 +82,7 @@ public class RefreshAutoConfiguration {
 	 */
 	public static final String REFRESH_SCOPE_ENABLED = REFRESH_SCOPE_PREFIX + ".enabled";
 
+	//注册RefreshScope
 	@Bean
 	@ConditionalOnMissingBean(RefreshScope.class)
 	public static RefreshScope refreshScope() {
@@ -101,6 +102,10 @@ public class RefreshAutoConfiguration {
 		return new ContextRefresher(context, scope);
 	}
 
+	/**
+	 * 监听上下文刷新事件，spring容器启动之后，会调用发布
+	 *
+	 */
 	@Bean
 	public RefreshEventListener refreshEventListener(ContextRefresher contextRefresher) {
 		return new RefreshEventListener(contextRefresher);

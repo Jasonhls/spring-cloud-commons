@@ -36,6 +36,10 @@ public class RefreshEndpoint {
 		this.contextRefresher = contextRefresher;
 	}
 
+	/**
+	 * 当调用/actuator/refresh端点时，会执行如下refresh方法
+	 * @return
+	 */
 	@WriteOperation
 	public Collection<String> refresh() {
 		Set<String> keys = this.contextRefresher.refresh();

@@ -83,14 +83,18 @@ public class ContextRefresher {
 
 	public synchronized Set<String> refresh() {
 		Set<String> keys = refreshEnvironment();
+		//对应的bean刷新
 		this.scope.refreshAll();
 		return keys;
 	}
 
 	public synchronized Set<String> refreshEnvironment() {
+		//配置信息修改之前的值
 		Map<String, Object> before = extract(
 				this.context.getEnvironment().getPropertySources());
+		//重新加载读取配置信息，获取最新的配置，真正执行的是LegacyContextRefresher的updateEnvironment方法
 		addConfigFilesToEnvironment();
+		//将之前的配置与最新配置进行对比，获取所有改变的配置
 		Set<String> keys = changes(before,
 				extract(this.context.getEnvironment().getPropertySources())).keySet();
 		this.context.publishEvent(new EnvironmentChangeEvent(this.context, keys));

@@ -37,6 +37,9 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 
 	private LoadBalancerRequestFactory requestFactory;
 
+	//在配置文件LoadBalancerAutoConfiguration中会初始化LoadBalancerInterceptor对象
+	//传入的LoadBalancerClient为RibbonLoadBalancerClient对象
+	//传入的requestFactory为LoadBalancerRequestFactory对象
 	public LoadBalancerInterceptor(LoadBalancerClient loadBalancer,
 			LoadBalancerRequestFactory requestFactory) {
 		this.loadBalancer = loadBalancer;
@@ -56,6 +59,7 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 		Assert.state(serviceName != null,
 				"Request URI does not contain a valid hostname: " + originalUri);
 		return this.loadBalancer.execute(serviceName,
+				//下面这个方法创建LoadBalancerRequest对象
 				this.requestFactory.createRequest(request, body, execution));
 	}
 

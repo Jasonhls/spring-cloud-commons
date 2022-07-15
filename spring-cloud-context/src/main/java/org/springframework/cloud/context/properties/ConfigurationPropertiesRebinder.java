@@ -77,21 +77,26 @@ public class ConfigurationPropertiesRebinder
 		return this.errors;
 	}
 
+	//触发监听器的onApplicationEvent的时候被调用
 	@ManagedOperation
 	public void rebind() {
 		this.errors.clear();
+		//遍历所有的配置类（带有@ConfigurationProperties注解的类）
 		for (String name : this.beans.getBeanNames()) {
+			//对每一个bean进行重新绑定
 			rebind(name);
 		}
 	}
 
 	@ManagedOperation
 	public boolean rebind(String name) {
+		//首先必须在存有所有带@ConfigurationProperties注解的bean的名称集合中
 		if (!this.beans.getBeanNames().contains(name)) {
 			return false;
 		}
 		if (this.applicationContext != null) {
 			try {
+				//实例化name对应的bean
 				Object bean = this.applicationContext.getBean(name);
 				if (AopUtils.isAopProxy(bean)) {
 					bean = ProxyUtils.getTargetObject(bean);
@@ -102,8 +107,10 @@ public class ConfigurationPropertiesRebinder
 					if (getNeverRefreshable().contains(bean.getClass().getName())) {
 						return false; // ignore
 					}
+					//销毁当前的bean
 					this.applicationContext.getAutowireCapableBeanFactory()
 							.destroyBean(bean);
+					//初始化Bean
 					this.applicationContext.getAutowireCapableBeanFactory()
 							.initializeBean(bean, name);
 					return true;

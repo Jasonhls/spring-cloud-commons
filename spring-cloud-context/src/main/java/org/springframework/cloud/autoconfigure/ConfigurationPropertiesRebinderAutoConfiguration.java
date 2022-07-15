@@ -55,6 +55,7 @@ public class ConfigurationPropertiesRebinderAutoConfiguration
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public ConfigurationPropertiesRebinder configurationPropertiesRebinder(
 			ConfigurationPropertiesBeans beans) {
+		//把ConfigurationPropertiesBeans（它的属性beans包含所有带有@ConfigurationProperties注解的bean）这个bean实例传给ConfigurationPropertiesRebinder的属性beans
 		ConfigurationPropertiesRebinder rebinder = new ConfigurationPropertiesRebinder(
 				beans);
 		return rebinder;

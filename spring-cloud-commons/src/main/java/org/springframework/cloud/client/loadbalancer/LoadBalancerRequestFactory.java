@@ -50,14 +50,18 @@ public class LoadBalancerRequestFactory {
 			final HttpRequest request, final byte[] body,
 			final ClientHttpRequestExecution execution) {
 		return instance -> {
+			//首先创建ServiceRequestWrapper对象，将HttpRequest，ServiceInstance，RibbonLoadBalancerClient传给ServiceRequestWrapper
 			HttpRequest serviceRequest = new ServiceRequestWrapper(request, instance,
 					this.loadBalancer);
+			//this.transformers是通过LoadBalancerRequestFactory的构造方法传入的
 			if (this.transformers != null) {
 				for (LoadBalancerRequestTransformer transformer : this.transformers) {
 					serviceRequest = transformer.transformRequest(serviceRequest,
 							instance);
 				}
 			}
+			//ClientHttpRequestExecution只有一个实现类即InterceptingRequestExecution对象
+			//传入的HttpRequest对象为ServiceRequestWrapper对象
 			return execution.execute(serviceRequest, body);
 		};
 	}
